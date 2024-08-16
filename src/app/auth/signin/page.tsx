@@ -8,7 +8,7 @@ export default function SignIn() {
 
     const getErrorMessage = (error: string | string[] | undefined) => {
         if (error) {
-            return "Invalid username or password. Please try again.";
+            return "Invalid credentials. Please try again.";
         }
 
         return "";

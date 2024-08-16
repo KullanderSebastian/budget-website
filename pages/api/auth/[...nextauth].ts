@@ -1,18 +1,25 @@
-import NextAuth from 'next-auth';
+import NextAuth, { NextAuthOptions, Session, SessionStrategy, User as NextAuthUser } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { MongoDBAdapter } from '@next-auth/mongodb-adapter';
+import connectToDatabase from '@/app/lib/mongodb';
 import bcrypt from "bcrypt";
 import clientPromise from '@/app/lib/mongodbAdapter';
 import dotenv from "dotenv";
+import User from '@/app/models/UserSchema';
+import { JWT } from 'next-auth/jwt';
+import { AdapterUser } from 'next-auth/adapters';
+
+
 
 dotenv.config();
 
-export default NextAuth({
+export const authOptions = {
     providers: [
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID as string,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+            allowDangerousEmailAccountLinking: true,
         }),
         CredentialsProvider({
             name: "Credentials",
@@ -21,18 +28,16 @@ export default NextAuth({
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
-                const client = await clientPromise;
-                const db = client.db(process.env.MONGODB_DB);
-                const user = await db.collection("users").findOne({
-                    email: credentials?.email,
-                });
+                await connectToDatabase();
+
+                const user = await User.findOne({ email: credentials?.email });
 
                 if (user && !user.password) {
-                    throw new Error("Invalid username or password");
+                    throw new Error("Invalid credentials");
                 }
 
                 if (user && credentials?.password) {
-                    const isValid = await bcrypt.compare(credentials.password, user.password);
+                    const isValid = await bcrypt.compare(credentials.password, user.password as string);
                     if (isValid) {
                         return { id: user._id.toString(), email: user.email };
                     }
@@ -43,23 +48,45 @@ export default NextAuth({
     ],
     adapter: MongoDBAdapter(clientPromise),
     callbacks: {
-        async session({ session, token }) {
+        async signIn({ user, account, profile }: { user: NextAuthUser | AdapterUser; account: any; profile?: any }) {
+            if (account?.provider === "google") {
+                await connectToDatabase();
+                const existingUser = await User.findOne({ email: user.email});
+
+                if (existingUser && !existingUser.googleId) {
+                    existingUser.googleId = account?.providerAccountId;
+                    await existingUser.save();
+                } else if (!existingUser) {
+                    const newUser = new User({
+                        name: user.name,
+                        email: user.email,
+                        image: user.image,
+                        googleId: account?.providerAccountId,
+                        emailVerified: true,
+                    });
+                    await newUser.save();
+                }
+            }
+
+            return true;
+        },
+        async session({ session, token }: { session: Session; token: JWT }) {
             session.userId = token.sub;
             return session;
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user }: { token: JWT; user?: NextAuthUser }) {
             if (user) {
                 token.sub = user.id;
             }
             return token;
         },
-        async redirect({ url, baseUrl}) {
+        async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
             return url.startsWith(baseUrl) ? `${baseUrl}/dashboard` : url;
         }
     },
     secret: process.env.NEXTAUTH_SECRET,
     session: {
-        strategy: "jwt",
+        strategy: "jwt" as SessionStrategy,
     },
     jwt: {
         secret: process.env.NEXTAUTH_SECRET,
@@ -69,4 +96,6 @@ export default NextAuth({
         signOut: "/auth/signout",
         error: "/auth/signin"
     },
-});
+};
+
+export default NextAuth(authOptions);

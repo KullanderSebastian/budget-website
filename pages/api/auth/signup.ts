@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcrypt";
-import { MongoClient } from "mongodb";
-import clientPromise from "@/app/lib/mongodbAdapter";
+import User from "@/app/models/UserSchema";
+import connectToDatabase from "@/app/lib/mongodb";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -18,11 +18,9 @@ export default async function signup(req: NextApiRequest, res: NextApiResponse) 
     }
 
     try {
-        const client: MongoClient = await clientPromise;
-        const db = client.db(process.env.MONGODB_DB);
-        const usersCollection = db.collection("users");
+        await connectToDatabase();
 
-        const existingUser = await usersCollection.findOne({ email });
+        const existingUser = await User.findOne({ email });
 
         if (existingUser) {
             return res.status(400).json({ message: "User already exists" });
@@ -30,19 +28,20 @@ export default async function signup(req: NextApiRequest, res: NextApiResponse) 
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const newUser = {
+        const newUser = new User({
             email,
             password: hashedPassword
-        };
+        });
 
-        const result = await usersCollection.insertOne(newUser);
+        const savedUser = await newUser.save();
 
-        if (result.insertedId) {
-            res.status(201).json({ message: "User created", userId: result.insertedId });
+        if (savedUser) {
+            res.status(201).json({ message: "User created", userId: savedUser._id });
         } else {
             res.status(500).json({ message: "Failed to create user" });
         }
     } catch (error) {
+        console.error("Error during signup:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 }

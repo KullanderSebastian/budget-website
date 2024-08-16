@@ -12,6 +12,5 @@ export const SignUpSchema = yup.object().shape({
         .matches(/\d/, 'Password must contain at least one number'),
     confirmPassword: yup
         .string()
-        .oneOf([yup.ref("password"), undefined], "Passwords must match")
         .required("Please confirm your password")
 });

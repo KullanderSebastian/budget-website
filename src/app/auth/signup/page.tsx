@@ -1,13 +1,14 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SignUpSchema } from "@/app/validation/signupSchema";
+import { SignUpSchema } from "@/app/validation/signUpSchema";
 import * as yup from "yup";
 
 export default function Signup() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [touchedFields, setTouchedFields] = useState<{ email?: boolean, password?: boolean, confirmPassword?: boolean }>({})
     const [error, setError] = useState("");
     const [formErrors, setFormErrors] = useState<{ email?: string, password?: string, confirmPassword?: string }>({});
     const router = useRouter();
@@ -23,8 +24,54 @@ export default function Signup() {
         }
     };
 
+    const handleBlur = (field: string) => {
+        setTouchedFields((prev) => ({ ...prev, [field]: true }));
+        validateField(field, getFieldValue(field));
+    }
+
+    const handleChange = (field: keyof typeof touchedFields, value: string) => {
+        setFormFieldValue(field, value);
+        if (touchedFields[field]) {
+            validateField(field, value);
+        }
+    }
+
+    const setFormFieldValue = (field: string, value: string) => {
+        switch (field) {
+            case "email":
+                setEmail(value);
+                break;
+            case "password":
+                setPassword(value);
+                break;
+            case "confirmPassword":
+                setConfirmPassword(value);
+                break;
+            default:
+                break;
+        }
+    };
+
+    const getFieldValue = (field: string) => {
+        switch (field) {
+            case "email":
+                return email;
+            case "password":
+                return password;
+            case "confirmPassword":
+                return confirmPassword;
+            default:
+                return "";
+        }
+    };
+
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (password != confirmPassword) {
+            setFormErrors({ confirmPassword: "Passwords must match" });
+            return;
+        }
 
         try {
             await SignUpSchema.validate({ email, password, confirmPassword }, { abortEarly: false });
@@ -66,26 +113,24 @@ export default function Signup() {
                     type="email"
                     placeholder="Email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onBlur={() => validateField("email", email)}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    onBlur={() => handleBlur("email")}
                     required
                 />
                 {formErrors.email && <p style={{ color: "red" }}>{formErrors.email}</p>}
                 <input
                     type="password"
                     placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onBlur={() => validateField("password", password)}
+                    onChange={(e) => handleChange("password", e.target.value)}
+                    onBlur={() => handleBlur("password")}
                     required
                 />
                 {formErrors.password && <p style={{ color: "red" }}>{formErrors.password}</p>}
                 <input
                     type="password"
                     placeholder="Confirm Password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    onBlur={() => validateField("confirmPassword", confirmPassword)}
+                    onChange={(e) => handleChange("confirmPassword", e.target.value)}
+                    onBlur={() => handleBlur("confirmPassword")}
                     required
                 />
                 {formErrors.confirmPassword && <p style={{ color: "red" }}>{formErrors.confirmPassword}</p>}
