@@ -9,6 +9,8 @@ interface IUser extends Document {
     googleId?: string;
     emailVerified?: boolean;
     currency: string;
+    created_at: Date;
+    updated_at: Date;
 }
 
 const UserSchema: Schema<IUser> = new Schema({
@@ -49,7 +51,7 @@ const UserSchema: Schema<IUser> = new Schema({
         default: "USD",
         enum: ["SEK", "USD", "EUR"],
     }
-});
+}, { timestamps: true });
 
 const User: Model<IUser> = mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
 export default User;

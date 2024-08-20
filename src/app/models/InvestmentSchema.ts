@@ -6,6 +6,7 @@ interface IInvestment extends Document {
     amount: number;
     currency: string;
     type: string;
+    recurring: boolean;
     created_at: Date;
     updated_at: Date;
 }
@@ -23,8 +24,6 @@ const InvestmentSchema: Schema<IInvestment> = new Schema({
     },
     currency: {
         type: String,
-        default: "USD",
-        enum: ["SEK", "USD", "EUR"],
         required: true,
     },
     type: {
@@ -32,6 +31,10 @@ const InvestmentSchema: Schema<IInvestment> = new Schema({
         enum: ["stocks", "bonds", "real estate", "crypto", "mutual funds", "retirement", "other"],
         required: true,
     },
+    recurring: {
+        type: Boolean,
+        required: true,
+    }
 }, { timestamps: true });
 
 const Investment: Model<IInvestment> = mongoose.models.Ivestment || mongoose.model<IInvestment>("Investment", InvestmentSchema);

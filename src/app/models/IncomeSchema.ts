@@ -6,6 +6,7 @@ export interface IIncome extends Document {
     amount: number;
     currency: string;
     source: string;
+    recurring: boolean;
     created_at: Date;
     updated_at: Date;
 }
@@ -23,8 +24,6 @@ const IncomeSchema: Schema<IIncome> = new Schema({
     },
     currency: {
         type: String,
-        default: "USD",
-        enum: ["SEK", "USD", "EUR"],
         required: true,
     },
     source: {
@@ -32,6 +31,10 @@ const IncomeSchema: Schema<IIncome> = new Schema({
         enum: ["salary", "freelance", "investment", "other"],
         required: true,
     },
+    recurring: {
+        type: Boolean,
+        required: true,
+    }
 }, { timestamps: true });
 
 const Income: Model<IIncome> = mongoose.models.Income || mongoose.model<IIncome>("Income", IncomeSchema);

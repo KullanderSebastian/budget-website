@@ -3,6 +3,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+declare global {
+    var mongoose: {
+        conn: mongoose.Connection | null;
+        promise: Promise<mongoose.Connection> | null;
+    };
+}
+
 const MONGODB_URI = process.env.MONGODB_URI as string;
 
 if (!MONGODB_URI) {

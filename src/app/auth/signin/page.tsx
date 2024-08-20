@@ -38,6 +38,9 @@ export default function SignIn() {
             <p>
                 Don't have an account? <a href="/auth/signup">Sign up</a>
             </p>
+            <p>
+                Forgot your password? <a href="/auth/request-reset-password">Click here</a>
+            </p>
         </div>
     );
 }

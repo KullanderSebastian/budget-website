@@ -8,6 +8,7 @@ interface ISaving extends Document {
     is_completed: boolean;
     currency: string;
     goal: string;
+    recurring: boolean;
     created_at: Date;
     updated_at: Date;
 }
@@ -35,14 +36,16 @@ const SavingSchema: Schema<ISaving> = new Schema({
     },
     currency: {
         type: String,
-        default: "USD",
-        enum: ["SEK", "USD", "EUR"],
         required: true,
     },
     goal: {
         type: String,
         required: true,
     },
+    recurring: {
+        type: Boolean,
+        required: true,
+    }
 }, { timestamps: true });
 
 const Saving: Model<ISaving> = mongoose.models.Saving || mongoose.model<ISaving>("Saving", SavingSchema);

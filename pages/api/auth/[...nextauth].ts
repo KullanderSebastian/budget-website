@@ -10,8 +10,6 @@ import User from '@/app/models/UserSchema';
 import { JWT } from 'next-auth/jwt';
 import { AdapterUser } from 'next-auth/adapters';
 
-
-
 dotenv.config();
 
 export const authOptions = {
@@ -71,6 +69,12 @@ export const authOptions = {
             return true;
         },
         async session({ session, token }: { session: Session; token: JWT }) {
+            const user = await User.findById(token.sub);
+
+            if (user) {
+                (session.user as any).emailVerified = user.emailVerified;
+            }
+
             session.userId = token.sub;
             return session;
         },

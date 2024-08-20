@@ -8,6 +8,7 @@ interface IExpense extends Document {
     type: string;
     category: string;
     description?: string;
+    recurring: boolean;
     created_at: Date;
     updated_at: Date;
 }
@@ -32,8 +33,6 @@ const ExpenseSchema: Schema<IExpense> = new Schema({
     },
     currency: {
         type: String,
-        default: "USD",
-        enum: ["SEK", "USD", "EUR"],
         required: true,
     },
     type: {
@@ -67,6 +66,10 @@ const ExpenseSchema: Schema<IExpense> = new Schema({
         type: String,
         required: false,
     },
+    recurring: {
+        type: Boolean,
+        required: true,
+    }
 }, { timestamps: true });
 
 const Expense: Model<IExpense> = mongoose.models.Expense || mongoose.model<IExpense>("Expense", ExpenseSchema);
